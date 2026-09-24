@@ -1,12 +1,17 @@
 {
-  "name": "Menu",
-  "short_name": "Menu",
+  "name": "sample set dinner menus",
+  "short_name": "sample set d",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#1b1b1b",
   "theme_color": "#1b1b1b",
   "icons": [
-    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
   ]
 }
