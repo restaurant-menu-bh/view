@@ -3,307 +3,525 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Menu admin</title>
 <meta name="robots" content="noindex, nofollow">
+<meta name="theme-color" content="#2F6B4F">
+<title>Menu admin</title>
+<link rel="icon" href="icon.svg">
 <script src="pdf.min.js"></script>
 <script src="pdf.worker.min.js"></script>
+<script src="qrcode.js"></script>
 <style>
 :root{
   --bg:#F3F5F2; --paper:#FFFFFF; --ink:#16302B; --muted:#5B6E69; --line:#D5DDD9;
-  --accent:#2F6B4F; --accent-ink:#FFFFFF; --warn:#A23B2A;
+  --accent:#2F6B4F; --accent-ink:#FFFFFF; --warn:#A23B2A; --ok:#2F6B4F; --soft:#E7EEEA;
   box-sizing:border-box;
   padding-top:env(safe-area-inset-top,0px);
   padding-bottom:env(safe-area-inset-bottom,0px);
 }
 @media (prefers-color-scheme:dark){
-  :root:not([data-theme="light"]){
-    --bg:#101816; --paper:#17221F; --ink:#E4EEEA; --muted:#94A8A2; --line:#2B3B37;
-    --accent:#6FBF95; --accent-ink:#0D1A15; --warn:#F08A76;
-  }
-}
-:root[data-theme="dark"]{
-  --bg:#101816; --paper:#17221F; --ink:#E4EEEA; --muted:#94A8A2; --line:#2B3B37;
-  --accent:#6FBF95; --accent-ink:#0D1A15; --warn:#F08A76;
+  :root{--bg:#101816; --paper:#17221F; --ink:#E4EEEA; --muted:#94A8A2; --line:#2B3B37;
+    --accent:#6FBF95; --accent-ink:#0D1A15; --warn:#F08A76; --ok:#6FBF95; --soft:#1E2C28;}
 }
 *,*::before,*::after{box-sizing:border-box}
-html{scroll-padding-top:env(safe-area-inset-top,0px)}
-body{margin:0;background:var(--bg);color:var(--ink);
-  font-family:system-ui,-apple-system,"Segoe UI",sans-serif;line-height:1.5}
-main{max-width:720px;margin:0 auto;padding:32px 20px 64px}
-h1{font-size:clamp(2rem,7vw,3.2rem);font-weight:800;line-height:1.02;letter-spacing:-.02em;margin:0 0 12px}
-.lede{color:var(--muted);margin:0 0 28px;max-width:52ch}
-.drop{display:block;border:2px dashed var(--line);border-radius:18px;background:var(--paper);
-  padding:36px 20px;text-align:center;cursor:pointer;transition:border-color .15s}
+html{-webkit-text-size-adjust:100%}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.5 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:680px;margin:0 auto;padding:24px 16px 56px}
+h1{font-size:clamp(1.7rem,6vw,2.4rem);line-height:1.1;margin:0 0 6px;letter-spacing:-.01em}
+.lede{color:var(--muted);margin:0 0 20px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:18px 16px;margin:0 0 16px}
+.card h2{font-size:1.15rem;margin:0 0 4px}
+.card p.sub{color:var(--muted);margin:0 0 14px;font-size:.95rem}
+.drop{position:relative;display:block;border:2px dashed var(--line);border-radius:14px;padding:22px 14px;text-align:center;cursor:pointer}
 .drop:hover,.drop.over{border-color:var(--accent)}
-.drop strong{display:block;font-size:1.15rem}
-.drop span{color:var(--muted);font-size:.95rem}
-.drop input{position:absolute;width:1px;height:1px;opacity:0}
+.drop strong{display:block;font-size:1.05rem}
+.drop span{color:var(--muted);font-size:.9rem}
+.drop input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
 .drop:focus-within{outline:3px solid var(--accent);outline-offset:3px}
-.fields{display:grid;gap:14px;margin:22px 0}
+.fields{display:grid;gap:14px;margin:16px 0}
 label.f{display:grid;gap:6px;font-weight:600;font-size:.95rem}
-input[type=text],select{font:inherit;padding:11px 12px;border-radius:10px;border:1px solid var(--line);
-  background:var(--paper);color:var(--ink);width:100%}
+input[type=text],input[type=password]{
+  font:inherit;font-size:16px;font-weight:400;padding:12px;border-radius:10px;border:1px solid var(--line);
+  background:var(--bg);color:var(--ink);width:100%;min-height:46px}
+.check{display:flex;gap:10px;align-items:center;font-size:.95rem;min-height:40px}
+.check input{width:20px;height:20px;accent-color:var(--accent)}
 .row{display:flex;gap:10px;flex-wrap:wrap}
-button{font:inherit;font-weight:600;border:0;border-radius:999px;padding:12px 22px;cursor:pointer}
+button{font:inherit;font-weight:600;border:0;border-radius:12px;padding:12px 18px;min-height:48px;cursor:pointer;flex:1 1 auto}
 button.primary{background:var(--accent);color:var(--accent-ink)}
 button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-button:disabled{opacity:.45;cursor:not-allowed}
-button:focus-visible,select:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
-.status{min-height:1.5em;color:var(--muted);margin:14px 0}
-.status.err{color:var(--warn)}
-.bar{height:6px;background:var(--line);border-radius:6px;overflow:hidden;display:none}
-.bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .2s}
-.preview{margin-top:26px;display:none}
-.preview iframe{width:100%;height:70vh;border:1px solid var(--line);border-radius:14px;background:#fff}
-.note{font-size:.9rem;color:var(--muted);margin-top:10px}
-details.settings{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin:0 0 22px}
-details.settings summary{cursor:pointer;font-weight:600}
-details.settings .fields{margin:14px 0 4px}
-.check{display:flex;gap:8px;align-items:center;font-size:.95rem}
-.hint{font-size:.85rem;color:var(--muted);font-weight:400}
-.hint a{color:var(--accent)}
-.live{margin-top:10px;font-weight:600}
-.live a{color:var(--accent);word-break:break-all}
+button:disabled{opacity:.4;cursor:not-allowed}
+button:focus-visible,input:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.status{min-height:1.5em;color:var(--muted);margin:12px 0 0;font-size:.95rem}
+.status.err{color:var(--warn)} .status.good{color:var(--ok);font-weight:600}
+.sections{display:grid;gap:12px;margin:0 0 14px}
+.sec{border:1px solid var(--line);border-radius:14px;padding:12px;background:var(--bg)}
+.sec-top{display:flex;gap:8px;align-items:center}
+.sec-num{flex:0 0 auto;width:28px;height:28px;border-radius:50%;background:var(--soft);display:grid;place-items:center;font-weight:700;font-size:.85rem}
+.sec-top input{flex:1 1 auto;min-width:0;background:var(--paper);font-weight:600}
+.sec-info{font-size:.88rem;color:var(--muted);margin:8px 0 10px 36px;word-break:break-word}
+.sec-info.err{color:var(--warn)} .sec-info.busy{color:var(--accent)}
+.sec-actions{display:flex;gap:6px;flex-wrap:wrap;margin-left:36px}
+.sec-actions button,.sec-actions label.btn{flex:0 0 auto;min-height:40px;padding:8px 12px;font-size:.9rem;border-radius:10px}
+label.btn{position:relative;display:inline-grid;place-items:center;font-weight:600;border:1px solid var(--line);cursor:pointer}
+label.btn input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%}
+.sec-actions button.icon{min-width:44px;padding:8px 0;font-size:1.05rem}
+.empty{color:var(--muted);text-align:center;padding:6px 0 2px;font-size:.95rem}
+.preview{margin-top:16px;display:none}
+.phone{max-width:390px;margin:0 auto;border:1px solid var(--line);border-radius:22px;overflow:hidden;background:#000}
+.phone iframe{display:block;width:100%;height:min(70vh,700px);border:0;background:#fff}
+.note{font-size:.88rem;color:var(--muted);margin:10px 0 0;text-align:center}
+.foot{text-align:center;margin:8px 0 0;color:var(--muted);font-size:.9rem}
+.vh{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);opacity:0;pointer-events:none}
+.linkbtn{background:none;border:0;min-height:40px;color:var(--muted);text-decoration:underline;font-weight:500;font-size:.9rem;cursor:pointer;flex:none;padding:8px}
+.menulink{display:block;margin:6px 0 14px;padding:12px;border-radius:10px;background:var(--soft);color:var(--accent);font-weight:700;word-break:break-all;text-decoration:none}
+.menulink:hover{text-decoration:underline}
+.qrwrap{display:grid;place-items:center;background:#fff;border-radius:14px;padding:16px;margin:14px 0;border:1px solid var(--line)}
+.qrwrap canvas{width:100%;max-width:280px;height:auto;display:block}
+@media (max-width:520px){
+  main{padding:18px 12px 48px}
+  .card{padding:16px 14px;border-radius:14px}
+  .row button{flex:1 1 100%}
+  .phone{border-radius:14px}
+  .sec-info,.sec-actions{margin-left:0}
+}
 </style>
 </head>
 <body>
 <main>
   <h1>Menu admin</h1>
-  <p class="lede">Upload the menu PDF, check the preview, then publish. Customers see the new menu at your menu link, and it keeps working on their phones without internet.</p>
+  <p class="lede">Publish your menu and get the QR code for your tables.</p>
 
-  <details class="settings" id="settings">
-    <summary id="settingsSummary">Website connection</summary>
-    <div class="fields">
-      <label class="f">GitHub username or organization
-        <input type="text" id="ghOwner" autocomplete="off" spellcheck="false">
-      </label>
-      <label class="f">Repository name
-        <input type="text" id="ghRepo" autocomplete="off" spellcheck="false">
-      </label>
-      <label class="f">Branch
-        <input type="text" id="ghBranch" value="main" autocomplete="off" spellcheck="false">
-      </label>
-      <label class="f">Access token
-        <input type="password" id="ghToken" autocomplete="off" spellcheck="false" placeholder="github_pat_…">
-        <span class="hint">Create it at <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub → Fine-grained tokens</a>. Choose only this repository and set <em>Contents</em> to <em>Read and write</em>. Only people with this token can change the menu.</span>
-      </label>
-      <label class="check"><input type="checkbox" id="ghRemember"> Remember on this device</label>
+  <section class="card linkcard" aria-labelledby="linkH">
+    <h2 id="linkH">Customer menu link</h2>
+    <a class="menulink" id="menuLink" target="_blank" rel="noopener"></a>
+    <div class="row">
+      <button class="primary" id="copyLink">Copy link</button>
+      <button class="ghost" id="openLink">Open menu</button>
     </div>
-  </details>
-
-  <label class="drop" id="drop">
-    <input type="file" id="file" accept="application/pdf">
-    <strong id="dropTitle">Choose a PDF or drop it here</strong>
-    <span id="dropSub">The PDF is converted on this device.</span>
-  </label>
-
-  <div class="fields">
-    <label class="f">Restaurant name (shown as the page title)
-      <input type="text" id="name" placeholder="e.g. Trattoria Sole">
-    </label>
-    <label class="f">Photo quality
-      <select id="quality">
-        <option value="1.6|0.78">Light – smaller file, quick to load</option>
-        <option value="2.2|0.85" selected>Standard – sharp on phones</option>
-        <option value="3|0.9">High – best for tablets and zoom</option>
-      </select>
-    </label>
-  </div>
-
-  <div class="row">
-    <button class="primary" id="convert" disabled>Convert to HTML</button>
-    <button class="primary" id="publish" disabled>Publish to customers</button>
-    <button class="ghost" id="download" disabled>Download copy</button>
-  </div>
-  <div class="status" id="status" role="status"></div>
-  <div class="bar" id="bar"><i></i></div>
-  <p class="live" id="live"></p>
-
-  <section class="preview" id="preview">
-    <iframe id="frame" title="Menu preview"></iframe>
-    <p class="note">This is exactly what customers will see. "Download copy" saves the same menu as a file for a tablet or USB stick.</p>
+    <div class="status" id="linkStatus" role="status"></div>
   </section>
+
+  <section class="card" id="keyCard" hidden aria-labelledby="keyH">
+    <h2 id="keyH">Sign in</h2>
+    <p class="sub">Enter your admin key to publish menus.</p>
+    <form id="keyForm" action="#" method="post" autocomplete="on">
+      <input type="text" name="username" id="keyUser" autocomplete="username" value="" tabindex="-1" aria-hidden="true" class="vh">
+      <div class="fields">
+        <label class="f">Admin key
+          <input type="password" name="password" id="ghToken" autocomplete="current-password" spellcheck="false" placeholder="Secret key" required>
+        </label>
+        <label class="check"><input type="checkbox" id="remember" checked> Remember me on this device</label>
+      </div>
+      <div class="row"><button class="primary" type="submit" id="saveKey">Sign in</button></div>
+      <div class="status" id="keyStatus" role="status"></div>
+    </form>
+  </section>
+
+  <section class="card" aria-labelledby="menuH">
+    <h2 id="menuH">Menu</h2>
+    <p class="sub">Each PDF becomes a tab customers can tap, e.g. Food, Drinks, Desserts.</p>
+    <div class="sections" id="sections"></div>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept="application/pdf" multiple>
+      <strong>Add PDF</strong>
+      <span>Tap to choose one or more PDFs, or drop them here</span>
+    </label>
+    <div class="status" id="status" role="status"></div>
+
+    <div class="preview" id="preview">
+      <div class="phone"><iframe id="frame" title="Menu preview"></iframe></div>
+      <p class="note">Preview of what customers see on their phone.</p>
+      <div class="row" style="margin-top:14px">
+        <button class="primary" id="publish">Publish to customers</button>
+        <button class="ghost" id="download">Download copy</button>
+      </div>
+      <div class="status" id="pubStatus" role="status"></div>
+    </div>
+  </section>
+
+  <section class="card" aria-labelledby="qrH">
+    <h2 id="qrH">QR code</h2>
+    <p class="sub">Print it once. It always opens your latest published menu at <a id="qrLinkText" target="_blank" rel="noopener" style="color:var(--accent);word-break:break-all"></a>.</p>
+    <div class="qrwrap"><canvas id="qrCanvas" width="1200" height="1500" aria-label="QR code preview"></canvas></div>
+    <div class="row">
+      <button class="primary" id="qrPng">Download PNG</button>
+      <button class="ghost" id="qrSvg">Download SVG (for print shop)</button>
+      <button class="ghost" id="qrPrint">Print</button>
+    </div>
+    <div class="status" id="qrStatus" role="status"></div>
+  </section>
+  <p class="foot"><span id="signedIn" hidden>Signed in<span id="remNote"></span> · </span><button class="linkbtn" id="forget" hidden>Sign out</button></p>
 </main>
 
 <script>
 (function(){
-  var fileInput=document.getElementById('file'), drop=document.getElementById('drop');
-  var convertBtn=document.getElementById('convert'), dlBtn=document.getElementById('download');
-  var statusEl=document.getElementById('status'), bar=document.getElementById('bar');
-  var preview=document.getElementById('preview'), frame=document.getElementById('frame');
-  var pdfFile=null, outputHtml=null;
-  var pubBtn=document.getElementById('publish'), live=document.getElementById('live');
-  var F={owner:'ghOwner',repo:'ghRepo',branch:'ghBranch',token:'ghToken'};
-  function el(k){return document.getElementById(F[k]);}
-  function cfg(){return {owner:el('owner').value.trim(),repo:el('repo').value.trim(),branch:el('branch').value.trim()||'main',token:el('token').value.trim()};}
-  function siteUrl(c){
-    var host=c.owner.toLowerCase()+'.github.io';
-    return 'https://'+host+'/'+(c.repo.toLowerCase()===host?'':c.repo+'/');
-  }
-  (function loadSettings(){
-    var saved=null; try{saved=JSON.parse(localStorage.getItem('menuAdmin')||'null');}catch(e){}
-    if(saved){Object.keys(F).forEach(function(k){if(saved[k])el(k).value=saved[k];});document.getElementById('ghRemember').checked=true;}
-    else if(/\.github\.io$/i.test(location.hostname)){
-      el('owner').value=location.hostname.split('.')[0];
-      var seg=location.pathname.split('/').filter(Boolean)[0];
-      el('repo').value=(seg&&!/\.html$/i.test(seg))?seg:location.hostname;
-    }
-    var c=cfg(); if(!c.token)document.getElementById('settings').open=true;
-    if(c.owner&&c.repo)live.innerHTML='Customer link: <a href="'+siteUrl(c)+'" target="_blank" rel="noopener">'+siteUrl(c)+'</a>';
-  })();
-  function saveSettings(){
-    try{
-      if(document.getElementById('ghRemember').checked)localStorage.setItem('menuAdmin',JSON.stringify(cfg()));
-      else localStorage.removeItem('menuAdmin');
-    }catch(e){}
-  }
-  document.getElementById('ghRemember').addEventListener('change',saveSettings);
+  /* ===== Settings (edit here only) ===== */
+  var CONFIG={
+    owner:'restaurant-menu-bh',                          // GitHub account
+    repo:'view',                                         // repository
+    branch:'main',
+    name:'Menu',                                         // restaurant name (menu title + QR card)
+    menuUrl:'https://restaurant-menu-bh.github.io/view/',// fixed QR link
+    scale:2.2, jpeg:0.85                                 // photo quality
+  };
+  /* ===================================== */
 
+  var $=function(id){return document.getElementById(id);};
+  var KEY='menuAdminKey';
+  var secs=[], uid=0, queue=Promise.resolve(), pending=0, publishing=false;
+
+  if(window.pdfjsLib) pdfjsLib.GlobalWorkerOptions.workerSrc='pdf.worker.min.js';
+
+  function say(el,msg,kind){el=$(el);el.textContent=msg;el.className='status'+(kind?' '+kind:'');}
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function saveBlob(blob,name){
+    var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=name;
+    document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
+  }
+  function niceLabel(fname){
+    var t=fname.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ').replace(/\s+/g,' ').trim();
+    return t?t.replace(/\b\w/g,function(c){return c.toUpperCase();}):'Menu';
+  }
+
+  /* ---------- Sign in: key stays in this browser only, never in the repo ---------- */
+  function getKey(){try{return localStorage.getItem(KEY)||sessionStorage.getItem(KEY)||'';}catch(e){return '';}}
+  function setKey(v,remember){
+    try{localStorage.removeItem(KEY); sessionStorage.removeItem(KEY); if(v)(remember?localStorage:sessionStorage).setItem(KEY,v);}catch(e){}
+  }
+  function isRemembered(){try{return !!localStorage.getItem(KEY);}catch(e){return false;}}
+  function showKeyState(){
+    var has=!!getKey();
+    $('keyCard').hidden=has; $('forget').hidden=!has; $('signedIn').hidden=!has;
+    $('remNote').textContent=has?(isRemembered()?' (remembered on this device)':' (until you close the browser)'):'';
+  }
+  $('keyUser').value=CONFIG.owner+'/'+CONFIG.repo+' admin';
+  function apiHeaders(key,accept){return {'Authorization':'Bearer '+key,'Accept':accept||'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'};}
+  var API='https://api.github.com/repos/'+encodeURIComponent(CONFIG.owner)+'/'+encodeURIComponent(CONFIG.repo);
+  async function checkKey(key){
+    var r=await fetch(API,{headers:apiHeaders(key)});
+    if(r.status===401)throw new Error('This admin key is wrong or expired.');
+    if(!r.ok)throw new Error('This key has no access to the menu repository.');
+    var d=await r.json();
+    if(d.permissions&&d.permissions.push===false)throw new Error('This key can only read. It needs Contents: Read and write.');
+  }
+  function keyFromLink(){
+    var m=location.hash.match(/(?:^#|&)key=([^&]+)/);
+    if(m){setKey(decodeURIComponent(m[1]),true);history.replaceState(null,'',location.pathname+location.search);showKeyState();}
+  }
+  keyFromLink(); window.addEventListener('hashchange',keyFromLink);
+  $('keyForm').addEventListener('submit',async function(ev){
+    ev.preventDefault();
+    var v=$('ghToken').value.trim(), remember=$('remember').checked;
+    if(!v){say('keyStatus','Paste the admin key first.','err');return;}
+    $('saveKey').disabled=true; say('keyStatus','Checking key…');
+    try{
+      await checkKey(v);
+      if(remember&&window.PasswordCredential&&navigator.credentials){
+        try{await navigator.credentials.store(new PasswordCredential({id:$('keyUser').value,password:v,name:'Menu admin'}));}catch(e){}
+      }
+      setKey(v,remember); say('keyStatus','');
+      setTimeout(function(){$('ghToken').value='';showKeyState();if(!secs.length)loadCurrent();},50);
+    }catch(e){say('keyStatus',e.message||'Could not check the key. Check your internet connection.','err');}
+    finally{$('saveKey').disabled=false;}
+  });
+  $('forget').addEventListener('click',function(){
+    if(confirm('Sign out on this device? You will need the admin key again to publish.')){setKey('');showKeyState();}
+  });
+
+  /* ---------- Sections (tabs) ---------- */
+  function render(){
+    var box=$('sections'); box.innerHTML='';
+    if(!secs.length){box.innerHTML='<p class="empty">No tabs yet. Add your first PDF below.</p>';}
+    secs.forEach(function(s,i){
+      var d=document.createElement('div'); d.className='sec';
+      var info=s.state==='busy'?'Converting '+esc(s.file||'PDF')+'… '+(s.progress||'')
+        :s.state==='err'?esc(s.error)
+        :s.pages.length+' page'+(s.pages.length>1?'s':'')+(s.file?' · '+esc(s.file):' · currently published');
+      d.innerHTML=
+        '<div class="sec-top"><span class="sec-num">'+(i+1)+'</span>'+
+        '<input type="text" aria-label="Tab name" placeholder="Tab name, e.g. Drinks" value="'+esc(s.label)+'"></div>'+
+        '<div class="sec-info'+(s.state==='busy'?' busy':s.state==='err'?' err':'')+'">'+info+'</div>'+
+        '<div class="sec-actions">'+
+          '<label class="btn">Replace<input type="file" accept="application/pdf" aria-label="Replace PDF"></label>'+
+          '<button class="ghost icon" data-a="up"'+(i===0?' disabled':'')+' aria-label="Move up" title="Move up">↑</button>'+
+          '<button class="ghost icon" data-a="down"'+(i===secs.length-1?' disabled':'')+' aria-label="Move down" title="Move down">↓</button>'+
+          '<button class="ghost" data-a="del">Remove</button>'+
+        '</div>';
+      d.querySelector('input[type=text]').addEventListener('input',function(){s.label=this.value;refreshPreview();});
+      d.querySelector('input[type=file]').addEventListener('change',function(){var f=this.files[0];this.value='';if(f)addPdf(f,s);});
+      d.querySelectorAll('button[data-a]').forEach(function(b){b.addEventListener('click',function(){
+        var a=b.getAttribute('data-a'), k=secs.indexOf(s);
+        if(a==='up'&&k>0){secs.splice(k,1);secs.splice(k-1,0,s);}
+        if(a==='down'&&k<secs.length-1){secs.splice(k,1);secs.splice(k+1,0,s);}
+        if(a==='del'){if(!confirm('Remove the "'+(s.label||'untitled')+'" tab?'))return; secs.splice(k,1);}
+        render(); refreshPreview();
+      });});
+      box.appendChild(d);
+    });
+  }
+  function updateInfo(s){
+    var i=secs.indexOf(s); if(i<0)return;
+    var el=$('sections').children[i]; if(!el)return;
+    var info=el.querySelector('.sec-info');
+    info.textContent='Converting '+(s.file||'PDF')+'… '+(s.progress||'');
+  }
+
+  function addPdf(f,target){
+    if(f.type!=='application/pdf'&&!/\.pdf$/i.test(f.name)){say('status',f.name+' is not a PDF.','err');return;}
+    var s=target;
+    if(!s){s={id:++uid,label:niceLabel(f.name),pages:[]};secs.push(s);}
+    s.state='busy'; s.file=f.name; s.progress='';
+    pending++; render(); say('status','');
+    queue=queue.then(function(){return convert(f,s);}).catch(function(){}).then(function(){pending--;render();refreshPreview();});
+  }
+  var fileInput=$('file'), drop=$('drop');
+  fileInput.addEventListener('change',function(){Array.prototype.forEach.call(fileInput.files,function(f){addPdf(f);});fileInput.value='';});
+  ['dragenter','dragover'].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.add('over');});});
+  ['dragleave','drop'].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.remove('over');});});
+  drop.addEventListener('drop',function(ev){Array.prototype.forEach.call(ev.dataTransfer.files,function(f){addPdf(f);});});
+
+  async function convert(file,s){
+    if(!window.pdfjsLib){s.state='err';s.error='The PDF reader did not load. Make sure pdf.min.js and pdf.worker.min.js are in the repo.';return;}
+    try{
+      var pdf=await pdfjsLib.getDocument({data:await file.arrayBuffer()}).promise, pages=[];
+      for(var i=1;i<=pdf.numPages;i++){
+        s.progress='page '+i+' of '+pdf.numPages; updateInfo(s);
+        var page=await pdf.getPage(i), vp=page.getViewport({scale:CONFIG.scale});
+        var c=document.createElement('canvas'); c.width=Math.round(vp.width); c.height=Math.round(vp.height);
+        var ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
+        await page.render({canvasContext:ctx,viewport:vp}).promise;
+        var text=''; try{var tc=await page.getTextContent();text=tc.items.map(function(t){return t.str+(t.hasEOL?'\n':' ');}).join('').replace(/[ \t]+/g,' ').trim();}catch(e){}
+        pages.push({img:c.toDataURL('image/jpeg',CONFIG.jpeg),w:c.width,h:c.height,text:text});
+        c.width=c.height=0;
+      }
+      s.pages=pages; s.state='ok';
+    }catch(e){
+      console.error(e); s.state='err';
+      s.error=file.name+' could not be converted. If it is password-protected, save an unlocked copy and try again.';
+      if(!s.pages.length)s.pages=[];
+    }
+  }
+
+  /* ---------- Read the currently published menu (so one tab can be changed alone) ---------- */
+  function parseMenu(html){
+    var doc=new DOMParser().parseFromString(html,'text/html'), out=[];
+    function pagesOf(root){
+      return Array.prototype.map.call(root.querySelectorAll('.pg'),function(pg){
+        var img=pg.querySelector('img'), t=pg.querySelector('.txt');
+        return img&&/^data:image\//.test(img.getAttribute('src'))?{img:img.getAttribute('src'),w:+img.getAttribute('width')||0,h:+img.getAttribute('height')||0,text:t?t.textContent:''}:null;
+      }).filter(Boolean);
+    }
+    var panels=doc.querySelectorAll('section.panel');
+    if(panels.length){
+      panels.forEach(function(p){var pg=pagesOf(p);if(pg.length)out.push({label:p.getAttribute('data-label')||'Menu',pages:pg});});
+    }else{
+      var pg=pagesOf(doc); if(pg.length)out.push({label:'Menu',pages:pg});
+    }
+    return out;
+  }
+  async function loadCurrent(){
+    say('status','Loading the current menu…');
+    var html=null;
+    try{
+      if(getKey()){
+        var r=await fetch(API+'/contents/index.html?ref='+encodeURIComponent(CONFIG.branch),{headers:apiHeaders(getKey(),'application/vnd.github.raw'),cache:'no-store'});
+        if(r.ok)html=await r.text();
+      }
+      if(html===null&&/^https?:/.test(location.protocol)){
+        var r2=await fetch('index.html?t='+Date.now(),{cache:'no-store'}); if(r2.ok)html=await r2.text();
+      }
+    }catch(e){}
+    if(secs.length){say('status','');return;} // admin already started adding PDFs
+    var found=html?parseMenu(html):[];
+    found.forEach(function(f){secs.push({id:++uid,label:f.label,pages:f.pages,state:'ok',file:''});});
+    say('status',found.length?'Loaded the published menu: '+found.map(function(f){return f.label;}).join(', ')+'. Change what you need, then publish.':'');
+    render(); refreshPreview();
+  }
+
+  /* ---------- Customer menu page ---------- */
+  function slug(s,used){
+    var b=(s||'menu').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9\u0600-\u06ff]+/g,'-').replace(/^-|-$/g,'')||'menu', k=b, n=2;
+    while(used[k])k=b+'-'+(n++); used[k]=1; return k;
+  }
+  function buildHtml(title,list){
+    var used={}, multi=list.length>1;
+    var ids=list.map(function(s){return slug(s.label,used);});
+    var single=!multi&&list[0]&&list[0].pages.length>1;
+    var pageNav=single?'<nav class="pages" aria-label="Pages">'+list[0].pages.map(function(_,i){return '<a href="#p'+(i+1)+'"'+(i===0?' class="on"':'')+'>'+(i+1)+'</a>';}).join('')+'</nav>':'';
+    var tabs=multi?'<nav class="tabs" role="tablist" aria-label="Menu sections">'+list.map(function(s,i){
+      return '<a href="#'+ids[i]+'" role="tab" data-t="'+ids[i]+'"'+(i===0?' class="on" aria-selected="true"':' aria-selected="false"')+'>'+esc(s.label)+'</a>';}).join('')+'</nav>':'';
+    var n=0;
+    var body=list.map(function(s,si){
+      return '<section class="panel" id="'+ids[si]+'" data-label="'+esc(s.label)+'"'+(multi?' role="tabpanel"':'')+'>\n'+
+        s.pages.map(function(p,pi){n++;
+          return '<div class="pg" id="p'+n+'"><img src="'+p.img+'" width="'+p.w+'" height="'+p.h+'" alt="'+esc(s.label)+' page '+(pi+1)+'"'+(n>1?' loading="lazy"':'')+' decoding="async">'+
+            (p.text?'<div class="txt">'+esc(p.text)+'</div>':'')+'</div>';
+        }).join('\n')+'\n</section>';
+    }).join('\n');
+    var css=
+      '*{box-sizing:border-box}html{-webkit-text-size-adjust:100%}'+
+      'body{margin:0;background:#141414;color:#fff;font:16px/1.4 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}'+
+      'header{position:sticky;top:0;z-index:5;background:rgba(20,20,20,.95);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border-bottom:1px solid #2a2a2a;'+
+        'padding:calc(10px + env(safe-area-inset-top,0px)) calc(14px + env(safe-area-inset-right,0px)) 10px calc(14px + env(safe-area-inset-left,0px))}'+
+      '.top{display:flex;align-items:center;gap:10px;min-height:36px}'+
+      'h1{flex:1 1 auto;min-width:0;margin:0;font-size:1.05rem;font-weight:650;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'+
+      'nav{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}nav::-webkit-scrollbar{display:none}'+
+      'nav a{flex:0 0 auto;color:#fff;text-decoration:none;border:1px solid #4a4a4a;border-radius:999px;height:36px;display:grid;place-items:center;padding:0 14px;font-size:.95rem;white-space:nowrap}'+
+      'nav a.on{background:#fff;color:#141414;border-color:#fff;font-weight:600}'+
+      '.pages{flex:0 1 auto}.pages a{min-width:36px;padding:0 10px}'+
+      '.tabs{margin:10px -14px 0;padding:0 14px}'+
+      'main{max-width:900px;margin:0 auto;padding:0 0 20px}'+
+      '.panel[hidden]{display:none}.pg{scroll-margin-top:110px}.pg+.pg{margin-top:8px}'+
+      '.pg img{display:block;width:100%;height:auto;background:#fff}'+
+      '.txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:pre-wrap}'+
+      '.hint{text-align:center;color:#9a9a9a;font-size:.85rem;padding:14px 16px 0}'+
+      'footer{max-width:900px;margin:0 auto;padding:18px 16px calc(28px + env(safe-area-inset-bottom,0px));text-align:center;border-top:1px solid #2a2a2a}'+
+      '.fl{margin:0 0 4px;color:#9a9a9a;font-size:.85rem}.url{color:#fff;font-weight:600;word-break:break-all;text-decoration:underline;text-underline-offset:3px}'+
+      '#share{display:block;margin:14px auto 0;font:inherit;font-weight:600;background:#fff;color:#141414;border:0;border-radius:999px;padding:12px 26px;min-height:46px;cursor:pointer}'+
+      '.msg{min-height:1.4em;margin:8px 0 0;color:#9a9a9a;font-size:.85rem}'+
+      '@media (min-width:700px){main{padding:16px 16px 40px}.pg img{border-radius:6px}.pg+.pg{margin-top:16px}}';
+    var shareJs='(function(){var U='+JSON.stringify(CONFIG.menuUrl)+',T='+JSON.stringify(title)+',b=document.getElementById("share"),m=document.getElementById("msg");'+
+      'function done(t){m.textContent=t;setTimeout(function(){m.textContent="";},2500);}'+
+      'b.addEventListener("click",function(){if(navigator.share){navigator.share({title:T,url:U}).catch(function(){});return;}'+
+      'if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(U).then(function(){done("Link copied");},function(){done(U);});}'+
+      'else{var x=document.createElement("textarea");x.value=U;document.body.appendChild(x);x.select();try{document.execCommand("copy");done("Link copied");}catch(e){done(U);}x.remove();}});})();';
+    var js='';
+    if(multi) js+=
+      'var T=document.querySelectorAll(".tabs a"),P=document.querySelectorAll(".panel");'+
+      'function show(id,push){var ok=false;P.forEach(function(p){if(p.id===id)ok=true;});if(!ok)id=P[0].id;'+
+      'P.forEach(function(p){p.hidden=p.id!==id;});T.forEach(function(t){var on=t.getAttribute("data-t")===id;t.classList.toggle("on",on);t.setAttribute("aria-selected",on);if(on&&t.scrollIntoView)t.scrollIntoView({block:"nearest",inline:"center"});});'+
+      'if(push)history.replaceState(null,"","#"+id);window.scrollTo(0,0);}'+
+      'T.forEach(function(t){t.addEventListener("click",function(e){e.preventDefault();show(t.getAttribute("data-t"),true);});});'+
+      'show(decodeURIComponent(location.hash.slice(1)),false);';
+    if(single) js+=
+      'var L=document.querySelectorAll(".pages a");if("IntersectionObserver" in window){var io=new IntersectionObserver(function(es){es.forEach(function(e){if(e.isIntersecting){L.forEach(function(a){a.classList.toggle("on",a.getAttribute("href")==="#"+e.target.id);});}});},{rootMargin:"-45% 0px -50% 0px"});document.querySelectorAll(".pg").forEach(function(s){io.observe(s);});}';
+    return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'+
+      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'+
+      '<meta name="theme-color" content="#141414">\n'+
+      '<title>'+esc(title)+'</title>\n<link rel="manifest" href="manifest.webmanifest">\n'+
+      '<link rel="icon" href="icon.svg">\n<link rel="apple-touch-icon" href="icon.svg">\n'+
+      '<meta name="apple-mobile-web-app-capable" content="yes">\n<meta name="mobile-web-app-capable" content="yes">\n'+
+      '<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">\n'+
+      '<style>'+css+'</style>\n</head>\n<body>\n<header><div class="top"><h1>'+esc(title)+'</h1>'+pageNav+'</div>'+tabs+'</header>\n<main>\n'+body+
+      '\n<p class="hint">Pinch to zoom</p>\n</main>\n'+
+      '<footer><p class="fl">Menu link</p><a class="url" href="'+esc(CONFIG.menuUrl)+'">'+esc(CONFIG.menuUrl.replace(/^https?:\/\//,'').replace(/\/$/,''))+'</a>'+
+      '<button type="button" id="share">Share menu</button><p class="msg" id="msg" role="status"></p></footer>\n<script>'+js+shareJs+
+      'if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(function(){});}<\/script>\n</body>\n</html>\n';
+  }
+  window.__buildHtml=buildHtml;
+
+  var outputHtml=null, prevTimer=null;
+  function readySecs(){return secs.filter(function(s){return s.state!=='busy'&&s.pages.length;});}
+  function refreshPreview(){
+    clearTimeout(prevTimer);
+    prevTimer=setTimeout(function(){
+      var list=readySecs();
+      if(!list.length||pending){ if(!list.length){$('preview').style.display='none';outputHtml=null;} $('publish').disabled=true; $('download').disabled=!list.length; if(!list.length)return; }
+      outputHtml=buildHtml(CONFIG.name,list.map(function(s){return {label:s.label.trim()||'Menu',pages:s.pages};}));
+      $('frame').srcdoc=outputHtml; $('preview').style.display='block';
+      $('publish').disabled=!!pending||publishing; $('download').disabled=false;
+    },250);
+  }
+
+  $('download').addEventListener('click',function(){
+    if(!outputHtml)return;
+    saveBlob(new Blob([outputHtml],{type:'text/html'}),'menu.html');
+    say('pubStatus','Saved menu.html.');
+  });
+
+  /* ---------- Publish to GitHub ---------- */
   function toB64(str){
     var bytes=new TextEncoder().encode(str), out='', CH=0x8000;
     for(var i=0;i<bytes.length;i+=CH)out+=String.fromCharCode.apply(null,bytes.subarray(i,i+CH));
     return btoa(out);
   }
-  async function gh(c,method,path,body){
-    var r=await fetch('https://api.github.com/repos/'+encodeURIComponent(c.owner)+'/'+encodeURIComponent(c.repo)+path,{
-      method:method,
-      headers:{'Authorization':'Bearer '+c.token,'Accept':'application/vnd.github+json','X-GitHub-Api-Version':'2022-11-28'},
-      body:body?JSON.stringify(body):undefined
-    });
+  async function gh(method,path,body){
+    var r=await fetch(API+path,{method:method,headers:apiHeaders(getKey()),body:body?JSON.stringify(body):undefined});
     var data=null; try{data=await r.json();}catch(e){}
     if(!r.ok){var err=new Error((data&&data.message)||('HTTP '+r.status));err.status=r.status;throw err;}
     return data;
   }
-  async function putFile(c,name,content,message,shas){
-    var body={message:message,content:toB64(content),branch:c.branch};
+  async function putFile(name,content,message,shas){
+    var body={message:message,content:toB64(content),branch:CONFIG.branch};
     if(shas[name])body.sha=shas[name];
-    await gh(c,'PUT','/contents/'+name,body);
+    await gh('PUT','/contents/'+name,body);
   }
-  pubBtn.addEventListener('click',async function(){
-    if(!outputHtml)return;
-    var c=cfg();
-    if(!c.owner||!c.repo||!c.token){document.getElementById('settings').open=true;setStatus('Fill in the website connection first.',true);return;}
-    saveSettings();
-    pubBtn.disabled=true; convertBtn.disabled=true;
+  $('publish').addEventListener('click',async function(){
+    if(!outputHtml||pending||publishing)return;
+    var empty=secs.filter(function(s){return s.pages.length&&!s.label.trim();});
+    if(empty.length){say('pubStatus','Give every tab a name first.','err');return;}
+    if(!getKey()){showKeyState();$('keyCard').scrollIntoView({behavior:'smooth'});say('pubStatus','Sign in first (at the top).','err');return;}
+    publishing=true; $('publish').disabled=true;
     try{
-      setStatus('Publishing…');
-      var list=await gh(c,'GET','/contents/?ref='+encodeURIComponent(c.branch));
+      say('pubStatus','Publishing…');
+      var list=await gh('GET','/contents/?ref='+encodeURIComponent(CONFIG.branch));
       var shas={}; (list||[]).forEach(function(f){shas[f.name]=f.sha;});
-      var title=document.getElementById('name').value.trim()||'Menu';
-      var stamp=new Date().toLocaleString();
-      await putFile(c,'index.html',outputHtml,'Update menu ('+stamp+')',shas);
-      var manifest=JSON.stringify({name:title,short_name:title.slice(0,12),start_url:'./',scope:'./',display:'standalone',
-        background_color:'#1b1b1b',theme_color:'#1b1b1b',icons:[{src:'icon.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}]},null,2);
-      await putFile(c,'manifest.webmanifest',manifest,'Update menu name',shas);
-      var url=siteUrl(c);
-      setStatus('Published. Customers will see the new menu in about 1–2 minutes.');
-      live.innerHTML='Customer link: <a href="'+url+'" target="_blank" rel="noopener">'+url+'</a>';
-      document.getElementById('settings').open=false;
+      await putFile('index.html',outputHtml,'Update menu: '+readySecs().map(function(s){return s.label.trim();}).join(', '),shas);
+      var manifest=JSON.stringify({name:CONFIG.name,short_name:CONFIG.name.slice(0,12),start_url:'./',scope:'./',display:'standalone',
+        background_color:'#141414',theme_color:'#141414',icons:[{src:'icon.svg',sizes:'any',type:'image/svg+xml',purpose:'any'}]},null,2);
+      await putFile('manifest.webmanifest',manifest,'Update menu name',shas);
+      secs.forEach(function(s){s.file='';}); render();
+      var ps=$('pubStatus'); ps.className='status good'; ps.innerHTML='Published. Customers see the new menu in about 1–2 minutes at <a href="'+CONFIG.menuUrl+'" target="_blank" rel="noopener" style="color:inherit;word-break:break-all">'+esc(CONFIG.menuUrl)+'</a>';
     }catch(e){
-      var m=e.status===401?'The access token is wrong or expired. Create a new one and paste it in Website connection.'
-        :e.status===403?'The token cannot change this repository. Give it Contents: Read and write for this repository.'
-        :e.status===404?'Repository or branch not found. Check the username, repository name and branch.'
-        :e.status===409||e.status===422?'Someone else changed the menu at the same moment. Click Publish again.'
-        :'Publishing failed: '+e.message+'. Check your internet connection and try again.';
-      document.getElementById('settings').open=(e.status===401||e.status===403||e.status===404);
-      setStatus(m,true);
-    }finally{pubBtn.disabled=false; convertBtn.disabled=false;}
+      var m=e.status===401?'The admin key is wrong or expired. Sign in again with a new key.'
+        :e.status===403?'The admin key cannot change this menu. It needs Contents: Read and write for this repository.'
+        :e.status===404?'The menu repository was not found, or the key has no access to it.'
+        :(e.status===409||e.status===422)?'The menu changed at the same moment. Tap Publish again.'
+        :'Publishing failed ('+e.message+'). Check your internet connection and try again.';
+      if(e.status===401||e.status===403||e.status===404){setKey('');showKeyState();}
+      say('pubStatus',m,'err');
+    }finally{publishing=false; $('publish').disabled=!!pending;}
   });
 
-  if(window.pdfjsLib){
-    pdfjsLib.GlobalWorkerOptions.workerSrc='pdf.worker.min.js';
+  /* ---------- QR code (fixed link) ---------- */
+  function makeQR(text){var qr=qrcode(0,'H'); qr.addData(text); qr.make(); return qr;}
+  function wrapLines(ctx,text,maxW){
+    var words=text.split(/\s+/), lines=[], line='';
+    words.forEach(function(w){var t=line?line+' '+w:w; if(ctx.measureText(t).width>maxW&&line){lines.push(line);line=w;}else line=t;});
+    if(line)lines.push(line); return lines.slice(0,2);
   }
-
-  function setStatus(msg,err){statusEl.textContent=msg;statusEl.className='status'+(err?' err':'');}
-  function setProgress(p){bar.style.display=p==null?'none':'block';bar.firstElementChild.style.width=((p||0)*100)+'%';}
-
-  function pick(f){
-    if(!f)return;
-    if(f.type!=='application/pdf' && !/\.pdf$/i.test(f.name)){setStatus('That file is not a PDF. Choose a .pdf file.',true);return;}
-    pdfFile=f; outputHtml=null; dlBtn.disabled=true; pubBtn.disabled=true;
-    document.getElementById('dropTitle').textContent=f.name;
-    document.getElementById('dropSub').textContent=(f.size/1048576).toFixed(1)+' MB · tap to choose another';
-    var nameEl=document.getElementById('name');
-    if(!nameEl.value) nameEl.value=f.name.replace(/\.pdf$/i,'').replace(/[_-]+/g,' ');
-    convertBtn.disabled=false; setStatus('');
+  function drawQR(){
+    var cv=$('qrCanvas'), ctx=cv.getContext('2d'), url=CONFIG.menuUrl, name=CONFIG.name, cap='Scan to see our menu';
+    var W=1200, pad=90, font='system-ui,-apple-system,"Segoe UI",Roboto,sans-serif';
+    ctx.font='700 84px '+font; var nameLines=wrapLines(ctx,name,W-pad*2);
+    ctx.font='500 56px '+font; var capLines=wrapLines(ctx,cap,W-pad*2);
+    var qrSize=W-pad*2, H=pad+nameLines.length*100+30+qrSize+40+capLines.length*70+pad;
+    cv.width=W; cv.height=H; ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
+    ctx.fillStyle='#111'; ctx.textAlign='center'; ctx.textBaseline='top';
+    var y=pad; ctx.font='700 84px '+font; nameLines.forEach(function(l){ctx.fillText(l,W/2,y);y+=100;}); y+=30;
+    var ok=false;
+    if(window.qrcode){
+      var qr=makeQR(url), n=qr.getModuleCount(), cell=Math.floor(qrSize/(n+8)), size=cell*(n+8), x0=(W-size)/2+cell*4, y0=y+(qrSize-size)/2+cell*4;
+      for(var r=0;r<n;r++)for(var c=0;c<n;c++)if(qr.isDark(r,c))ctx.fillRect(x0+c*cell,y0+r*cell,cell,cell);
+      ok=true;
+    }else say('qrStatus','The QR tool did not load. Make sure qrcode.js is in the repo.','err');
+    y+=qrSize+40; ctx.font='500 56px '+font; capLines.forEach(function(l){ctx.fillText(l,W/2,y);y+=70;});
+    ['qrPng','qrSvg','qrPrint'].forEach(function(id){$(id).disabled=!ok;});
   }
-  fileInput.addEventListener('change',function(){pick(fileInput.files[0]);});
-  ['dragenter','dragover'].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.add('over');});});
-  ['dragleave','drop'].forEach(function(e){drop.addEventListener(e,function(ev){ev.preventDefault();drop.classList.remove('over');});});
-  drop.addEventListener('drop',function(ev){pick(ev.dataTransfer.files[0]);});
-
-  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-
-  function buildHtml(title,pages){
-    var nav='';
-    if(pages.length>1){
-      nav='<nav>'+pages.map(function(_,i){return '<a href="#p'+(i+1)+'">'+(i+1)+'</a>';}).join('')+'</nav>';
-    }
-    var body=pages.map(function(p,i){
-      return '<section id="p'+(i+1)+'" class="pg"><img src="'+p.img+'" width="'+p.w+'" height="'+p.h+'" alt="'+esc(title)+' menu page '+(i+1)+'"'+(i>0?' loading="lazy"':'')+'>'+
-        (p.text?'<div class="txt">'+esc(p.text)+'</div>':'')+'</section>';
-    }).join('\n');
-    return '<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'+
-      '<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'+
-      '<meta name="color-scheme" content="light dark">\n'+
-      '<title>'+esc(title)+'</title>\n<link rel="manifest" href="manifest.webmanifest">\n<meta name="theme-color" content="#1b1b1b">\n<link rel="apple-touch-icon" href="icon.svg">\n<meta name="apple-mobile-web-app-capable" content="yes">\n<style>\n'+
-      'html,body{margin:0;background:#1b1b1b}body{font-family:system-ui,sans-serif;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}'+
-      'header{position:sticky;top:0;z-index:2;background:rgba(20,20,20,.92);color:#fff;padding:10px 14px;padding-top:calc(10px + env(safe-area-inset-top,0px));margin-top:calc(-1 * env(safe-area-inset-top,0px));display:flex;align-items:center;gap:12px;flex-wrap:wrap}'+
-      'h1{font-size:1.05rem;margin:0;font-weight:600}nav{display:flex;gap:6px;overflow-x:auto;margin-left:auto}'+
-      'nav a{color:#fff;text-decoration:none;border:1px solid #555;border-radius:999px;min-width:34px;text-align:center;padding:4px 10px;font-size:.9rem}'+
-      'main{max-width:900px;margin:0 auto;padding:10px 0 30px}.pg{margin:0 0 10px;scroll-margin-top:60px}'+
-      '.pg img{display:block;width:100%;height:auto;background:#fff}'+
-      '.txt{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:pre-wrap}'+
-      '\n</style>\n</head>\n<body>\n<header><h1>'+esc(title)+'</h1>'+nav+'</header>\n<main>\n'+body+'\n</main>\n<script>if("serviceWorker" in navigator&&location.protocol==="https:"){navigator.serviceWorker.register("sw.js").catch(function(){});}<\/script>\n</body>\n</html>\n';
+  function qrSvg(url){
+    var qr=makeQR(url), n=qr.getModuleCount(), q=4, d='';
+    for(var r=0;r<n;r++)for(var c=0;c<n;c++)if(qr.isDark(r,c))d+='M'+(c+q)+' '+(r+q)+'h1v1h-1z';
+    return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 '+(n+2*q)+' '+(n+2*q)+'" shape-rendering="crispEdges"><rect width="100%" height="100%" fill="#fff"/><path fill="#000" d="'+d+'"/></svg>';
   }
-
-  convertBtn.addEventListener('click',async function(){
-    if(!pdfFile)return;
-    if(!window.pdfjsLib){setStatus('The PDF reader did not load. Make sure pdf.min.js and pdf.worker.min.js are in the same folder as index.html.',true);return;}
-    var q=document.getElementById('quality').value.split('|'), scale=+q[0], jpg=+q[1];
-    var title=document.getElementById('name').value.trim()||'Menu';
-    convertBtn.disabled=true; dlBtn.disabled=true; pubBtn.disabled=true; setProgress(0);
-    try{
-      setStatus('Reading PDF…');
-      var buf=await pdfFile.arrayBuffer();
-      var pdf=await pdfjsLib.getDocument({data:buf}).promise;
-      var pages=[];
-      for(var i=1;i<=pdf.numPages;i++){
-        setStatus('Converting page '+i+' of '+pdf.numPages+'…');
-        var page=await pdf.getPage(i);
-        var vp=page.getViewport({scale:scale});
-        var c=document.createElement('canvas');
-        c.width=Math.round(vp.width); c.height=Math.round(vp.height);
-        var ctx=c.getContext('2d'); ctx.fillStyle='#fff'; ctx.fillRect(0,0,c.width,c.height);
-        await page.render({canvasContext:ctx,viewport:vp}).promise;
-        var text='';
-        try{var tc=await page.getTextContent();text=tc.items.map(function(t){return t.str+(t.hasEOL?'\n':' ');}).join('').replace(/[ \t]+/g,' ').trim();}catch(e){}
-        pages.push({img:c.toDataURL('image/jpeg',jpg),w:c.width,h:c.height,text:text});
-        c.width=c.height=0;
-        setProgress(i/pdf.numPages);
-      }
-      outputHtml=buildHtml(title,pages);
-      frame.srcdoc=outputHtml; preview.style.display='block';
-      var mb=(new Blob([outputHtml]).size/1048576).toFixed(1);
-      setStatus('Done: '+pdf.numPages+' page'+(pdf.numPages>1?'s':'')+', '+mb+' MB. Check the preview, then publish.');
-      dlBtn.disabled=false; pubBtn.disabled=false;
-    }catch(e){
-      console.error(e);
-      setStatus('This PDF could not be converted. If it is password-protected, save an unlocked copy and try again.',true);
-    }finally{convertBtn.disabled=false; setProgress(null);}
+  $('qrPng').addEventListener('click',function(){$('qrCanvas').toBlob(function(b){saveBlob(b,'menu-qr-code.png');say('qrStatus','Saved menu-qr-code.png.','good');},'image/png');});
+  $('qrSvg').addEventListener('click',function(){saveBlob(new Blob([qrSvg(CONFIG.menuUrl)],{type:'image/svg+xml'}),'menu-qr-code.svg');say('qrStatus','Saved menu-qr-code.svg (code only, sharp at any size).','good');});
+  $('qrPrint').addEventListener('click',function(){
+    var img=$('qrCanvas').toDataURL('image/png'), w=window.open('','_blank');
+    if(!w){say('qrStatus','Allow pop-ups to print, or use Download PNG.','err');return;}
+    w.document.write('<!doctype html><title>QR code</title><style>@page{margin:15mm}body{margin:0;display:grid;place-items:center;min-height:100vh}img{width:90mm;max-width:100%}</style><img src="'+img+'" onload="setTimeout(function(){print()},200)">');
+    w.document.close();
   });
 
-  function slug(s){return (s||'menu').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'menu';}
-
-  dlBtn.addEventListener('click',async function(){
-    if(!outputHtml)return;
-    var filename='menu.html';
-    var a=document.createElement('a');
-    a.href=URL.createObjectURL(new Blob([outputHtml],{type:'text/html'}));
-    a.download=filename; document.body.appendChild(a); a.click(); a.remove();
-    setTimeout(function(){URL.revokeObjectURL(a.href);},4000);
-    setStatus('Saved '+filename+'.');
+  /* ---------- Customer link ---------- */
+  $('menuLink').href=CONFIG.menuUrl; $('menuLink').textContent=CONFIG.menuUrl;
+  $('qrLinkText').href=CONFIG.menuUrl; $('qrLinkText').textContent=CONFIG.menuUrl;
+  $('openLink').addEventListener('click',function(){window.open(CONFIG.menuUrl,'_blank','noopener');});
+  $('copyLink').addEventListener('click',async function(){
+    try{await navigator.clipboard.writeText(CONFIG.menuUrl);}
+    catch(e){var t=document.createElement('textarea');t.value=CONFIG.menuUrl;document.body.appendChild(t);t.select();try{document.execCommand('copy');}catch(_){}t.remove();}
+    say('linkStatus','Link copied.','good'); setTimeout(function(){say('linkStatus','');},2500);
   });
+
+  showKeyState(); render(); drawQR(); loadCurrent();
 })();
 </script>
 </body>
